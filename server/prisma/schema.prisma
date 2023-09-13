@@ -1,0 +1,83 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "mysql"
+  url      = env("DATABASE_URL")
+}
+
+model users {
+  id        String     @id @default(uuid())
+  name      String
+  email     String     @unique
+  password  String
+  role      role       @default(USER)
+  createdAt DateTime   @default(now())
+  updatedAt DateTime   @updatedAt
+  comments  comments[]
+  profile   profile?
+  cart      cart[]
+}
+
+model profile {
+  id        String   @id @default(uuid())
+  phone     String
+  location  String
+  createdAt DateTime @default(now())
+  users     users    @relation(fields: [usersID], references: [id])
+  usersID   String   @unique
+}
+
+model comments {
+  id        String   @id @default(uuid())
+  comment   String   @db.LongText
+  starts    Int
+  createdAt DateTime @default(now())
+  userID    String
+  productID String
+  products  products @relation(fields: [productID], references: [id])
+  users     users    @relation(fields: [userID], references: [id])
+
+  @@index([productID], map: "comments_productID_fkey")
+  @@index([userID], map: "comments_userID_fkey")
+}
+
+model products {
+  id            String     @id @default(uuid())
+  name          String     @unique
+  description   String     @db.LongText
+  price         Int
+  instock       Int
+  booksLanguage String
+  createdAt     DateTime   @default(now())
+  updatedAt     DateTime   @updatedAt
+  categoryId    String?
+  comments      comments[]
+  category      category?  @relation(fields: [categoryId], references: [id])
+  cart          cart[]
+
+  @@index([categoryId], map: "products_categoryId_fkey")
+}
+
+model category {
+  id        String     @id @default(uuid())
+  name      String     @unique
+  createdAt DateTime   @default(now())
+  products  products[]
+}
+
+model cart {
+  id                 String   @id @default(uuid())
+  quantity           Int
+  productTotalsPrice Float
+  products           products @relation(fields: [productID], references: [id])
+  productID          String
+  users              users    @relation(fields: [usersID], references: [id])
+  usersID            String
+}
+
+enum role {
+  USER
+  ADMIN
+}
